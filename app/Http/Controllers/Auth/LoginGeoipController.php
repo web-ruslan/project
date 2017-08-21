@@ -2,11 +2,8 @@
 
 namespace App\Http\Controllers\Auth;
 
-use App\Http\Controllers\Controller;
 use App\Pusher;
-use App\User;
 use App\UserGeoipLog;
-use App\UserSocialAccount;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
