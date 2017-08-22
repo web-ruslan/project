@@ -66,9 +66,9 @@
             </div>
             <div class="panel panel-default">
                 <div class="panel-heading">Successful login log:</div>
-                <div class="panel-body">
+                <div class="panel-body" id="output">
                     @foreach ($geoip_logs as $one)
-                        {{ Carbon\Carbon::createFromTimestamp($one->login_date)->toDateString() }} :: {{ $one->user->name }}<br>
+                        {{ $one }}<br>
                     @endforeach
 
                 </div>
@@ -88,5 +88,13 @@
             url:"/login_geoip",
             mode:"toast" ///alert or toast
         });
+
+        var output = document.getElementById('output');
+        var print  = function (message) {
+            var content = output.innerHTML;
+            output.innerHTML = message + '<br>' + content;
+
+            return;
+        };
     </script>
 @endsection

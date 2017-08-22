@@ -1,5 +1,7 @@
 <?php
 
+use App\Events\eventTrigger;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -23,3 +25,11 @@ Route::get('auth/{provider}', 'Auth\LoginController@redirectToProvider');
 Route::get('auth/{provider}/callback', 'Auth\LoginController@handleProviderCallback');
 Route::get('login_geoip', [ 'as' => 'login_geoip', 'uses' => 'Auth\LoginGeoipController@showLoginForm']);
 Route::post('login_geoip', 'Auth\LoginGeoipController@login');
+
+/*Route::get('/alertBox', function () {
+    return view('eventListener');
+});
+
+Route::get('/fireEvent', function () {
+    event(new eventTrigger());
+});*/

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Events\eventTrigger;
 use App\Pusher;
 use App\UserGeoipLog;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
@@ -9,6 +10,7 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use Socialite;
 use GeoIP;
+use Illuminate\Support\Facades\Redis;
 
 class LoginGeoipController extends LoginController
 {
@@ -27,7 +29,21 @@ class LoginGeoipController extends LoginController
 
     public function showLoginForm()
     {
-        $geoip_logs = UserGeoipLog::with('user')->get();
+        Redis::del('geoip_logs');
+        if(!$geoip_logs = Redis::lrange('geoip_logs', 0 , -1)){
+            $geoip_logs = UserGeoipLog::with('user')->select(['login_date','user_id'])->orderBy('login_date', 'decs')->get();
+            foreach ($geoip_logs as $one) {
+                $result[] = Carbon::createFromTimestamp($one->login_date)->toDateString(). ' :: ' .$one->user->name;
+            }
+
+            Redis::pipeline(function ($pipe) use ($result) {
+                foreach($result as $key => $val){
+                    $pipe->rpush('geoip_logs', $val);
+                }
+            });
+            $geoip_logs = Redis::lrange('geoip_logs', 0, -1);
+        }
+
         return view('auth.login_geoip', ['geoip_logs' => $geoip_logs]);
     }
 
@@ -43,7 +59,8 @@ class LoginGeoipController extends LoginController
         $log_exist = UserGeoipLog::whereUserId($user->id)
             ->whereLoginDate(Carbon::today()->timestamp)
             ->first();
-        Pusher::sendDataToServer(['topic_id' => 'onNewLog','data' => Carbon::today()->timestamp.' :: '.$user->name]);
+
+
         if (!$log_exist) {
             $geoip_log = new UserGeoipLog([
                 'user_id' => $user->id,
@@ -51,7 +68,8 @@ class LoginGeoipController extends LoginController
                 'login_date' => Carbon::today()->timestamp]);
 
             $geoip_log->save();
-            //Pusher::sendDataToServer(['topic_id' => 'onNewLog','data' => Carbon::today()->timestamp.' :: '.$user->name]);
+            event(new eventTrigger(Carbon::today()->toDateString().' :: '.$user->name));
+            Redis::del('geoip_logs');
         }
 
         $success = [$this->username() => trans('auth.success')];
